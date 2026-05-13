@@ -72,12 +72,9 @@ self.addEventListener('fetch', event => {
   }
 });
 
-// ── BACKGROUND SYNC: Flush pending orders when online ────────────────
-self.addEventListener('sync', event => {
-  if (event.tag === SYNC_TAG) {
-    event.waitUntil(flushPendingOrders());
-  }
-});
+// ── BACKGROUND SYNC: Disabled — sync handled by offline.js flushQueue
+// to prevent duplicate orders. offline.js window.online event handles sync.
+// self.addEventListener('sync', ...) intentionally removed.
 
 // ── MESSAGE: Manual sync trigger + skip waiting ───────────────────────
 self.addEventListener('message', event => {
