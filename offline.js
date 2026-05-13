@@ -300,10 +300,6 @@ window.sendOrder = async function sendOrder() {
       const savedId = await saveOrderToDB(orderPayload);
       toast('📴 آرڈر محفوظ ہو گیا! (Pending #' + savedId + ')', 'orange');
       updateStatusUI();
-      if ('serviceWorker' in navigator && 'SyncManager' in window) {
-        const reg = await navigator.serviceWorker.ready;
-        await reg.sync.register(SW_SYNC_TAG);
-      }
     } catch (e) {
       toast('❌ آرڈر محفوظ نہ ہو سکا!', 'red');
     }
