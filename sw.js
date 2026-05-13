@@ -96,7 +96,7 @@ self.addEventListener('message', event => {
 
 // ── FLUSH: Read IndexedDB and POST each pending order ─────────────────
 async function flushPendingOrders() {
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxZzXp30LvCS2HJO3VpPH0h6HoY2hcNlQcw5CHvSV6AQRi4svIpAo3_ESDleMWBIoBmWg/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzlbYVkBbKZj5xq0f-UjNn7S-SjluSh_BeZ3-cByCD2HR_RwOS0E5Q7eZyVof6mFr1_Ow/exec';
 
   let db;
   try {
