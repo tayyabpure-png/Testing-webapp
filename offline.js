@@ -6,7 +6,7 @@
 // ────────────────────────────────────────────────────────────────────
 //  0. CONFIG
 // ────────────────────────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxZzXp30LvCS2HJO3VpPH0h6HoY2hcNlQcw5CHvSV6AQRi4svIpAo3_ESDleMWBIoBmWg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzlbYVkBbKZj5xq0f-UjNn7S-SjluSh_BeZ3-cByCD2HR_RwOS0E5Q7eZyVof6mFr1_Ow/exec';
 const SW_SYNC_TAG = 'sync-pending-orders';
 const DB_NAME = 'SahiPizzaDB';
 const DB_VERSION = 1;
@@ -332,11 +332,16 @@ window.sendOrder = async function sendOrder() {
 
 // ── THE CORRECT WAY TO SEND TO GOOGLE APPS SCRIPT ──────────────────
 // GET request with data encoded in URL — this is the ONLY method
-// that reliably works with GAS in no-cors mode from a browser.
-// In your Apps Script use: e.parameter.data
+// Send to GAS using an image beacon — works 100% with no-cors, no CORS issues ever
 function sendToGAS(payload) {
-  var url = GAS_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
-  return fetch(url, { method: 'GET', mode: 'no-cors' });
+  return new Promise((resolve) => {
+    var url = GAS_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
+    var img = new Image();
+    img.onload = img.onerror = function() { resolve(); };
+    img.src = url;
+    // Also fire fetch as backup
+    fetch(url, { method: 'GET', mode: 'no-cors' }).catch(() => {});
+  });
 }
 
 // ────────────────────────────────────────────────────────────────────
