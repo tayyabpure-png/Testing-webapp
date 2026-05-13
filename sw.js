@@ -3,35 +3,37 @@
 // ║         Offline-First PWA with Background Sync                  ║
 // ╚══════════════════════════════════════════════════════════════════╝
 
-const CACHE_NAME = 'sahi-pizza-v1';
+const CACHE_NAME = 'sahi-pizza-v3';
 const SYNC_TAG = 'sync-pending-orders';
 
 // Assets to pre-cache on install
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
-  // Google Fonts are cached at runtime (see fetch handler below)
 ];
 
-// ── INSTALL: Pre-cache shell assets ──────────────────────────────────
+// ── INSTALL: skip waiting immediately so new SW takes over instantly ─
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       return cache.addAll(PRECACHE_ASSETS);
-    }).then(() => self.skipWaiting()) // Activate immediately
+    }).then(() => self.skipWaiting()) // Take over immediately, no waiting
   );
 });
 
-// ── ACTIVATE: Clean up old caches ────────────────────────────────────
+// ── ACTIVATE: claim all clients immediately ───────────────────────────
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(
         keys
           .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
+          .map(key => {
+            console.log('[SW] Deleting old cache:', key);
+            return caches.delete(key);
+          })
       )
-    ).then(() => self.clients.claim()) // Take control of all open tabs
+    ).then(() => self.clients.claim()) // Take control of all open tabs instantly
   );
 });
 
@@ -77,8 +79,11 @@ self.addEventListener('sync', event => {
   }
 });
 
-// ── MESSAGE: Manual sync trigger from the page ───────────────────────
+// ── MESSAGE: Manual sync trigger + skip waiting ───────────────────────
 self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting(); // Activate new SW immediately when page asks
+  }
   if (event.data && event.data.type === 'MANUAL_SYNC') {
     flushPendingOrders().then(() => {
       // Notify all clients that sync is complete
