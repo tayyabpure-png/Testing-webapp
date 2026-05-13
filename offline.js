@@ -411,6 +411,31 @@ if ('serviceWorker' in navigator) {
     try {
       const reg = await navigator.serviceWorker.register('/sw.js');
       console.log('[SW] Registered:', reg.scope);
+
+      // Check for SW update every time page loads
+      reg.update();
+
+      // When a new SW is found and installed, activate it immediately
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log('[SW] New version found — activating immediately...');
+            newWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
+      });
+
+      // When SW takes control, reload the page silently to use new files
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          console.log('[SW] Controller changed — reloading for fresh files...');
+          window.location.reload();
+        }
+      });
+
     } catch (e) {
       console.warn('[SW] Registration failed:', e);
     }
