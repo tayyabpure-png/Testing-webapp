@@ -6,7 +6,7 @@
 // ────────────────────────────────────────────────────────────────────
 //  0. CONFIG
 // ────────────────────────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbz0y91fi5PYyLN2n_EWUK_AscVD_nTTODZj4qHsPRcthtNoe69j29it4fzEtTd_tebg-A/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxZzXp30LvCS2HJO3VpPH0h6HoY2hcNlQcw5CHvSV6AQRi4svIpAo3_ESDleMWBIoBmWg/exec';
 const SW_SYNC_TAG = 'sync-pending-orders';
 const DB_NAME = 'SahiPizzaDB';
 const DB_VERSION = 1;
@@ -299,31 +299,20 @@ window.sendOrder = async function sendOrder() {
     try {
       const savedId = await saveOrderToDB(orderPayload);
       toast('📴 آرڈر محفوظ ہو گیا! (Pending #' + savedId + ')', 'orange');
-      console.log('[Offline] Order saved to IndexedDB with id:', savedId);
       updateStatusUI();
-      // Try to register a Background Sync event for when connectivity returns
       if ('serviceWorker' in navigator && 'SyncManager' in window) {
         const reg = await navigator.serviceWorker.ready;
         await reg.sync.register(SW_SYNC_TAG);
-        console.log('[Offline] Background Sync registered:', SW_SYNC_TAG);
       }
     } catch (e) {
       toast('❌ آرڈر محفوظ نہ ہو سکا!', 'red');
-      console.error('[Offline] IndexedDB save failed:', e);
     }
   } else {
-    // ── ONLINE: Send directly to Google Apps Script ──
+    // ── ONLINE: Send to Google Apps Script ──
     try {
-      await fetch(GAS_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify(orderPayload)
-      });
+      await sendToGAS(orderPayload);
       toast('✅ آرڈر بھیج دیا گیا!', 'green');
-      console.log('[Online] Order sent to GAS directly.');
     } catch (e) {
-      // Fetch failed despite navigator.onLine being true — save to queue
-      console.warn('[Online] Fetch failed, saving to queue:', e);
       try {
         await saveOrderToDB(orderPayload);
         toast('⚠️ نیٹ ورک خرابی — آرڈر محفوظ کر لیا!', 'orange');
@@ -334,9 +323,21 @@ window.sendOrder = async function sendOrder() {
     updateStatusUI();
   }
 
+  // 6. Bluetooth print (fire and forget — won't block WhatsApp)
+  window.lastOrderPayload = orderPayload;
+
   // Re-enable button
   if (btn) { btn.disabled = false; btn.innerHTML = '<span style="font-size:19px">🚀</span> آرڈر بھیجیں'; }
 };
+
+// ── THE CORRECT WAY TO SEND TO GOOGLE APPS SCRIPT ──────────────────
+// GET request with data encoded in URL — this is the ONLY method
+// that reliably works with GAS in no-cors mode from a browser.
+// In your Apps Script use: e.parameter.data
+function sendToGAS(payload) {
+  var url = GAS_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
+  return fetch(url, { method: 'GET', mode: 'no-cors' });
+}
 
 // ────────────────────────────────────────────────────────────────────
 //  4. CONNECTIVITY MONITOR & AUTO-SYNC
@@ -367,11 +368,8 @@ async function flushQueue() {
 
   for (const record of pending) {
     try {
-      await fetch(GAS_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify({ ...record.payload, synced_from_queue: true })
-      });
+      var url = GAS_URL + '?data=' + encodeURIComponent(JSON.stringify({ ...record.payload, synced_from_queue: true }));
+      await fetch(url, { method: 'GET', mode: 'no-cors' });
       await deleteOrderFromDB(record.id);
       synced++;
       console.log(`[Sync] Order #${record.id} synced ✓`);
