@@ -91,7 +91,7 @@ self.addEventListener('message', event => {
 
 // ── FLUSH: Read IndexedDB and POST each pending order ─────────────────
 async function flushPendingOrders() {
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbz0y91fi5PYyLN2n_EWUK_AscVD_nTTODZj4qHsPRcthtNoe69j29it4fzEtTd_tebg-A/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxZzXp30LvCS2HJO3VpPH0h6HoY2hcNlQcw5CHvSV6AQRi4svIpAo3_ESDleMWBIoBmWg/exec';
 
   let db;
   try {
@@ -108,11 +108,8 @@ async function flushPendingOrders() {
 
   for (const order of pendingOrders) {
     try {
-      await fetch(GAS_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        body: JSON.stringify({ ...order.payload, synced_from_queue: true })
-      });
+      var url = GAS_URL + '?data=' + encodeURIComponent(JSON.stringify({ ...order.payload, synced_from_queue: true }));
+      await fetch(url, { method: 'GET', mode: 'no-cors' });
       // Mark as synced — remove from IndexedDB
       await deleteOrder(db, order.id);
       console.log(`[SW] Order #${order.id} synced ✓`);
