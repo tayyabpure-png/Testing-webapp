@@ -6,7 +6,7 @@
 // ────────────────────────────────────────────────────────────────────
 //  0. CONFIG
 // ────────────────────────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxL1F206HFUYyijTBGvBvcAAVsam9vQFEzgEAmJvJLXmirwrZLPyQqEwe-YXJgbKrvp/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz0y91fi5PYyLN2n_EWUK_AscVD_nTTODZj4qHsPRcthtNoe69j29it4fzEtTd_tebg-A/exec';
 const SW_SYNC_TAG = 'sync-pending-orders';
 const DB_NAME = 'SahiPizzaDB';
 const DB_VERSION = 1;
@@ -317,7 +317,6 @@ window.sendOrder = async function sendOrder() {
       await fetch(GAS_URL, {
         method: 'POST',
         mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify(orderPayload)
       });
       toast('✅ آرڈر بھیج دیا گیا!', 'green');
@@ -371,7 +370,6 @@ async function flushQueue() {
       await fetch(GAS_URL, {
         method: 'POST',
         mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ ...record.payload, synced_from_queue: true })
       });
       await deleteOrderFromDB(record.id);
